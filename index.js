@@ -130,11 +130,10 @@ function LBCClient(key, secret, otp) {
 	 * This method sends the actual HTTP request
 	 * @param  {String}   url      The URL to make the request
 	 * @param  {Object}   headers  Request headers
-	 * @param  {Object}   params   POST body
 	 * @param  {Function} callback A callback function to call when the request is complete
 	 * @return {Object}            The request object
 	 */
-	function rawGetRequest(url, headers, params, callback) {
+	function rawGetRequest(url, headers, callback) {
 
 		var options = {
 			url: url + '/',
