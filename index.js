@@ -30,7 +30,7 @@ function LBCClient(key, secret, otp) {
 			'dashboard', 'dashboard/released', 'dashboard/canceled', 'dashboard/closed', 
 			'dashboard/released/buyer', 'dashboard/canceled/buyer', 'dashboard/closed/buyer',
 			'dashboard/released/seller', 'dashboard/canceled/seller', 'dashboard/closed/seller',
-			'wallet-send'
+			'wallet-send','merchant/new_invoice','merchant/invoice/invoice_id'
 			]
 		};
 		if(methods.public.indexOf(method) !== -1) {
