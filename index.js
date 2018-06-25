@@ -1,12 +1,12 @@
 var request = require('request')
-var crypto		= require('crypto');
-var querystring	= require('querystring');
+var crypto = require('crypto');
+var querystring = require('querystring');
 var nonce = (new Date).getTime();
 
 
 function LBCClient(key, secret, otp) {
 	var self = this;
-  
+
 	var config = {
 		url: 'https://localbitcoins.com/api',
 		key: key,
@@ -27,26 +27,26 @@ function LBCClient(key, secret, otp) {
 			onlineAds: ['buy-bitcoins-online'],
 			public: ['countrycodes'],
 			private: ['ad-get', 'ad-get/ad_id', 'myself', 'ads',
-			'dashboard', 'dashboard/released', 'dashboard/canceled', 'dashboard/closed', 
-			'dashboard/released/buyer', 'dashboard/canceled/buyer', 'dashboard/closed/buyer',
-			'dashboard/released/seller', 'dashboard/canceled/seller', 'dashboard/closed/seller',
-			'wallet-send','merchant/new_invoice'
+				'dashboard', 'dashboard/released', 'dashboard/canceled', 'dashboard/closed',
+				'dashboard/released/buyer', 'dashboard/canceled/buyer', 'dashboard/closed/buyer',
+				'dashboard/released/seller', 'dashboard/canceled/seller', 'dashboard/closed/seller',
+				'wallet-send', 'merchant/new_invoice'
 			],
 			private_get: ['merchant/invoice']
 		};
-		if(methods.public.indexOf(method) !== -1) {
+		if (methods.public.indexOf(method) !== -1) {
 			return publicMethod(method, params, callback);
 		}
-		else if(methods.private.indexOf(method) !== -1) {
+		else if (methods.private.indexOf(method) !== -1) {
 			return privateMethod(method, params, callback);
-		}else if(methods.private_get.indexOf(method) !== -1) {
+		} else if (methods.private_get.indexOf(method) !== -1) {
 			return privateGetMethod(method, params, callback);
 		}
 		else {
 			throw new Error(method + ' is not a valid API method.');
 		}
 	}
-	
+
 	/**
 	 * This method makes a public API request.
 	 * @param  {String}   method   The API method (public or private)
@@ -57,8 +57,8 @@ function LBCClient(key, secret, otp) {
 	function publicMethod(method, params, callback) {
 		params = params || {};
 
-		var path	= '/' + method;
-		var url		= config.url + path;
+		var path = '/' + method;
+		var url = config.url + path;
 
 		return rawRequest(url, {}, params, callback);
 	}
@@ -69,12 +69,11 @@ function LBCClient(key, secret, otp) {
 	 * @param  {Function} callback A callback function to be executed when the request is complete
 	 * @return {Object}            The request object
 	 */
-	function privateGetMethod(method,params,callback) {
+	function privateGetMethod(method, params, callback) {
 		params = params || {};
 
-		var path	= '/' + method;
-		var url		= config.url + path;
-		url = url+'/'+params;
+		var path = '/' + method + '/' + params
+		var url = config.url + path;
 		var signature = getMessageSignature(path, params, nonce);
 
 		var headers = {
@@ -96,8 +95,8 @@ function LBCClient(key, secret, otp) {
 	function privateMethod(method, params, callback) {
 		params = params || {};
 
-		var path	= '/' + method;
-		var url		= config.url + path;
+		var path = '/' + method;
+		var url = config.url + path;
 
 		var signature = getMessageSignature(path, params, nonce);
 
@@ -119,7 +118,7 @@ function LBCClient(key, secret, otp) {
 	 * @return {String}          The request signature
 	 */
 	function getMessageSignature(path, params, nonce) {
-		var postParameters	= querystring.stringify(params);
+		var postParameters = querystring.stringify(params);
 		var path = '/api' + path + '/';
 		var message = nonce + config.key + path + postParameters;
 		var auth_hash = crypto.createHmac("sha256", config.secret).update(message).digest('hex').toUpperCase();
@@ -140,11 +139,11 @@ function LBCClient(key, secret, otp) {
 			headers: headers
 		};
 
-		var req = request.get(options, function(error, response, body) {
-			if(typeof callback === 'function') {
+		var req = request.get(options, function (error, response, body) {
+			if (typeof callback === 'function') {
 				var data;
 
-				if(error) {
+				if (error) {
 					callback.call(self, new Error('Error in server response: ' + JSON.stringify(error)), null);
 					return;
 				}
@@ -152,12 +151,12 @@ function LBCClient(key, secret, otp) {
 				try {
 					data = JSON.parse(body);
 				}
-				catch(e) {
+				catch (e) {
 					callback.call(self, new Error('Could not understand response from server: ' + body), null);
 					return;
 				}
 
-				if(data.error && data.error.length) {
+				if (data.error && data.error.length) {
 					callback.call(self, data.error, null);
 				}
 				else {
@@ -184,11 +183,11 @@ function LBCClient(key, secret, otp) {
 			form: params,
 		};
 
-		var req = request.post(options, function(error, response, body) {
-			if(typeof callback === 'function') {
+		var req = request.post(options, function (error, response, body) {
+			if (typeof callback === 'function') {
 				var data;
 
-				if(error) {
+				if (error) {
 					callback.call(self, new Error('Error in server response: ' + JSON.stringify(error)), null);
 					return;
 				}
@@ -196,12 +195,12 @@ function LBCClient(key, secret, otp) {
 				try {
 					data = JSON.parse(body);
 				}
-				catch(e) {
+				catch (e) {
 					callback.call(self, new Error('Could not understand response from server: ' + body), null);
 					return;
 				}
 
-				if(data.error && data.error.length) {
+				if (data.error && data.error.length) {
 					callback.call(self, data.error, null);
 				}
 				else {
@@ -213,9 +212,9 @@ function LBCClient(key, secret, otp) {
 		return req;
 	}
 
-	self.api			= api;
-	self.publicMethod	= publicMethod;
-	self.privateMethod	= privateMethod;
+	self.api = api;
+	self.publicMethod = publicMethod;
+	self.privateMethod = privateMethod;
 }
 
 module.exports = LBCClient;
