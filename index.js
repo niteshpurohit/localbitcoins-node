@@ -30,20 +30,23 @@ function LBCClient(key, secret, otp) {
 			'dashboard', 'dashboard/released', 'dashboard/canceled', 'dashboard/closed', 
 			'dashboard/released/buyer', 'dashboard/canceled/buyer', 'dashboard/closed/buyer',
 			'dashboard/released/seller', 'dashboard/canceled/seller', 'dashboard/closed/seller',
-			'wallet-send','merchant/new_invoice','merchant/invoice/invoice_id'
-			]
+			'wallet-send','merchant/new_invoice'
+			],
+			private_get: ['merchant/invoice']
 		};
 		if(methods.public.indexOf(method) !== -1) {
 			return publicMethod(method, params, callback);
 		}
 		else if(methods.private.indexOf(method) !== -1) {
 			return privateMethod(method, params, callback);
+		}else if(methods.private_get.indexOf(method) !== -1) {
+			return privateGetMethod(method, params, callback);
 		}
 		else {
 			throw new Error(method + ' is not a valid API method.');
 		}
 	}
-
+	
 	/**
 	 * This method makes a public API request.
 	 * @param  {String}   method   The API method (public or private)
@@ -59,7 +62,30 @@ function LBCClient(key, secret, otp) {
 
 		return rawRequest(url, {}, params, callback);
 	}
+	/**
+	 * This method makes a public API request.
+	 * @param  {String}   method   The API method (public or private)
+	 * @param  {String}   ID   Arguments to pass as ID METHOD/ID
+	 * @param  {Function} callback A callback function to be executed when the request is complete
+	 * @return {Object}            The request object
+	 */
+	function privateGetMethod(method,params,callback) {
+		params = params || {};
 
+		var path	= '/' + method;
+		var url		= config.url + path;
+		url = url+'/'+params;
+		var signature = getMessageSignature(path, params, nonce);
+
+		var headers = {
+			'Content-Type': 'application/x-www-form-urlencoded',
+			'Apiauth-Key': config.key,
+			'Apiauth-Nonce': nonce,
+			'Apiauth-Signature': signature
+		};
+
+		return rawGetRequest(url, headers, callback);
+	}
 	/**
 	 * This method makes a private API request.
 	 * @param  {String}   method   The API method (public or private)
@@ -100,6 +126,49 @@ function LBCClient(key, secret, otp) {
 		return auth_hash;
 	}
 
+	/**
+	 * This method sends the actual HTTP request
+	 * @param  {String}   url      The URL to make the request
+	 * @param  {Object}   headers  Request headers
+	 * @param  {Object}   params   POST body
+	 * @param  {Function} callback A callback function to call when the request is complete
+	 * @return {Object}            The request object
+	 */
+	function rawGetRequest(url, headers, params, callback) {
+
+		var options = {
+			url: url + '/',
+			headers: headers
+		};
+
+		var req = request.get(options, function(error, response, body) {
+			if(typeof callback === 'function') {
+				var data;
+
+				if(error) {
+					callback.call(self, new Error('Error in server response: ' + JSON.stringify(error)), null);
+					return;
+				}
+
+				try {
+					data = JSON.parse(body);
+				}
+				catch(e) {
+					callback.call(self, new Error('Could not understand response from server: ' + body), null);
+					return;
+				}
+
+				if(data.error && data.error.length) {
+					callback.call(self, data.error, null);
+				}
+				else {
+					callback.call(self, null, data);
+				}
+			}
+		});
+
+		return req;
+	}
 	/**
 	 * This method sends the actual HTTP request
 	 * @param  {String}   url      The URL to make the request
